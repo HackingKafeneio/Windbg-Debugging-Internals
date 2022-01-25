@@ -3,7 +3,7 @@
 
 The windows kernel main function `KiSystemStartup`  sets the IDT handlers for debugging.
 
-`KiBreakpointTrap` is responsible for handling breakpoints `int3` and `KiDebugTrapOrFault` is handling debugging `single-step`.
+`KiBreakpointTrap` is responsible for handling breakpoints `int3` and `KiDebugTrapOrFault` is handling the debugging `single-step` functionality.
 
 In case we need a startup-break(CTRL-K), windbg will send a break packet right after the initialization, that's going to execute `DbgBreakPointWithStatus`-`int3` function `(1)`.
 
@@ -107,6 +107,7 @@ KeUpdateSystemTime(IN PKTRAP_FRAME TrapFrame,
 Once an `int3` instruction gets executed, whether is executed directly from an overwritten instruction(by setting a breakpoint to a function) or from the `dpc` handler by sending a break packet, is going to execute `DispatchException` that will end up calling  `KdpTrap`.
 `KdpTrap` is the main parser of `windbg` protocol. Is going to end up in a loop that will handle every packet until we continue the execution with the `g` command.
 
+In case of `single-step`, the `single-step` bit is set in `eflags` and windbg will send a continue-packet. Once the next instruction(after breakpoint) is going to be executed, cpu will execute the `int1`(`KiDebugTrapOrFault`) handler and remove the `single-step` bit from `eflags`. `KiDebugTrapOrFault` will end up calling `KdpTrap` doing pretty much the same thing.
 
 ```asm
 PUBLIC KiBreakpointTrap
